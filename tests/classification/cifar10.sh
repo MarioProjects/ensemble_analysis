@@ -25,8 +25,8 @@ then
   exit
 fi
 
-seed=2102013
-gpu="0,1"
+seed=301220201
+gpu="0"
 dataset="CIFAR10"
 problem_type="classification"
 
