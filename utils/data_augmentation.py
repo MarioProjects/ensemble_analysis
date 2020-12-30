@@ -1,5 +1,6 @@
 """ --- DATA AUGMENTATION METHODS --- """
 
+import cv2
 import albumentations
 
 
@@ -216,11 +217,16 @@ def da_policy_downscale(img_size):
 ###########################################
 
 def cifar10_da(img_size):
+    # Following Kuangliu transformations -> https://github.com/kuangliu/pytorch-cifar/blob/master/main.py#L30
     print("Using CIFAR10 Data Augmentation Combinations")
 
+    pad_size = 4
     train_aug = [
-        albumentations.HorizontalFlip(p=0.3),
-        albumentations.Rotate(p=0.625, limit=45, interpolation=1, border_mode=0),
+        albumentations.PadIfNeeded(
+            min_height=(32+pad_size), min_width=(32+pad_size), border_mode=cv2.BORDER_CONSTANT, value=0, p=1.0
+        ),
+        albumentations.RandomCrop(32, 32, always_apply=False, p=1.0),
+        albumentations.HorizontalFlip(p=0.5),
     ]
 
     train_aug = common_test_augmentation(img_size) + train_aug

@@ -39,14 +39,7 @@ class CIFAR10Dataset(Dataset):
         if mode == "train":
             data = np.load(os.path.join(self.base_dir, "x_train.npy"))
             labels = np.load(os.path.join(self.base_dir, "y_train.npy"))
-            data = data[:int(len(data) * .85)]
-            labels = labels[:int(len(labels) * .85)]
-        elif mode == "validation":
-            data = np.load(os.path.join(self.base_dir, "x_train.npy"))
-            labels = np.load(os.path.join(self.base_dir, "y_train.npy"))
-            data = data[int(len(data) * .85):]
-            labels = labels[int(len(labels) * .85):]
-        else:  # mode == test
+        elif mode == "test":
             data = np.load(os.path.join(self.base_dir, "x_test.npy"))
             labels = np.load(os.path.join(self.base_dir, "y_test.npy"))
 
@@ -94,7 +87,7 @@ def dataset_selector(train_aug, val_aug, args, is_test=False):
         )
 
         val_dataset = CIFAR10Dataset(
-            mode="validation", transform=val_aug, normalization=args.normalization
+            mode="test", transform=val_aug, normalization=args.normalization
         )
 
         train_loader = DataLoader(
