@@ -3,9 +3,7 @@ import torch
 import os
 import numpy as np
 from torch.utils.data import Dataset
-from skimage import io
 import albumentations
-import copy
 
 import utils.dataload as d
 
@@ -16,15 +14,18 @@ class CIFAR10Dataset(Dataset):
     https://www.cs.toronto.edu/~kriz/cifar.html
     """
 
-    def __init__(self, mode, transform, normalization="normalize"):
+    def __init__(self, mode, transform, normalization="statistics"):
         """
         :param mode: (string) Dataset mode in ["train", "validation"]
         :param transform: (list) List of albumentations applied to image and mask
-        :param normalization: (str) Normalization mode. One of 'reescale', 'standardize', 'global_standardize'
+        :param normalization: (str) Normalization mode. One of 'reescale', 'standardize', 'statistics'
         """
 
         if mode not in ["train", "validation", "test"]:
             assert False, "Unknown mode '{}'".format(mode)
+
+        if normalization not in ['reescale', 'standardize', 'statistics']:
+            assert False, "Unknown normalization '{}'".format(normalization)
 
         self.base_dir = "data/CIFAR10"
         self.include_background = False
@@ -65,7 +66,12 @@ class CIFAR10Dataset(Dataset):
         label = self.labels[idx]
 
         image, mask = d.apply_augmentations(image, self.transform, None, None)
-        image = d.apply_normalization(image, self.normalization).transpose(2, 0, 1)
+        if self.normalization == "statistics":
+            norm_transform = albumentations.Normalize(mean=(0.4914, 0.4822, 0.4465), std=(0.2023, 0.1994, 0.2010))
+            image = norm_transform(image=image)["image"]
+        else:
+            image = d.apply_normalization(image, self.normalization)
+        image = image.transpose(2, 0, 1)
         image = torch.from_numpy(image).float()
 
         return {"image": image, "label": label}

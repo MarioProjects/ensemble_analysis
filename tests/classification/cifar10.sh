@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Only download the data argument ./tests/classification/cifar10.sh only_data
+
 # Check if CIFAR10 data is available, if not download
 if [ ! -d "data/CIFAR10" ]
 then
@@ -18,7 +20,6 @@ else
   echo "CIFAR10 data found at 'data' directory!"
 fi
 
-# Only download the data argument ./tests/segmentation/cifar10.sh only_data
 if [[ $1 == "only_data" ]]
 then
   exit
@@ -53,7 +54,7 @@ optimizer="sgd"
 # "none" - "random_crops" - "rotations" - "vflips" - "hflips" - "elastic_transform" - "grid_distortion" - "shift"
 # "scale" - "optical_distortion" - "coarse_dropout" or "cutout" - "downscale"
 data_augmentation="cifar10"
-normalization="standardize"  # reescale - standardize
+normalization="statistics"  # reescale - standardize - statistics
 
 # Available criterions for classification:
 # ce
@@ -75,7 +76,7 @@ python3 -u evaluate.py --gpu $gpu --dataset $dataset --model_name $model --img_s
 --batch_size $batch_size --normalization $normalization --output_dir "$output_dir" \
 --metrics accuracy --problem_type $problem_type --model_checkpoint "$model_checkpoint" --seed $seed
 
-model_checkpoint="$output_dir/model_${model}_${epochs-swa_start}epochs_swalr${swa_lr}.pt"
-python3 -u evaluate.py --gpu $gpu --dataset $dataset --model_name $model --img_size $img_size --crop_size $crop_size \
---swa_checkpoint --batch_size $batch_size --normalization $normalization --output_dir "$output_dir" \
---metrics accuracy --problem_type $problem_type --model_checkpoint "$model_checkpoint" --seed $seed
+#model_checkpoint="$output_dir/model_${model}_${epochs-swa_start}epochs_swalr${swa_lr}.pt"
+#python3 -u evaluate.py --gpu $gpu --dataset $dataset --model_name $model --img_size $img_size --crop_size $crop_size \
+#--swa_checkpoint --batch_size $batch_size --normalization $normalization --output_dir "$output_dir" \
+#--metrics accuracy --problem_type $problem_type --model_checkpoint "$model_checkpoint" --seed $seed

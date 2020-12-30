@@ -1,13 +1,4 @@
 import nibabel as nib
-import albumentations
-import numpy as np
-import os
-import pandas as pd
-import torch
-import copy
-from sklearn.model_selection import GroupKFold
-from torch.utils.data import Dataset, DataLoader
-from utils.data_augmentation import common_test_augmentation
 import pydicom
 from PIL import Image
 from utils.datasets import *

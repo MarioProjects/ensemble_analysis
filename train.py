@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import pretty_errors
+
 from torch.optim.swa_utils import AveragedModel
 
 # ---- My utils ----
@@ -11,9 +13,7 @@ from utils.datasets import dataset_selector
 from utils.logging import log_epoch, build_header
 from utils.neural import *
 
-import time
-time.sleep(5)
-
+pretty_errors.mono()
 set_seed(args.seed)
 
 train_aug, val_aug = data_augmentation_selector(

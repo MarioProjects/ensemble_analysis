@@ -217,14 +217,7 @@ def da_policy_downscale(img_size):
 
 def cifar10_da(img_size):
     print("Using CIFAR10 Data Augmentation Combinations")
-    """
-    albumentations.ElasticTransform(p=0.72, alpha=177, sigma=177 * 0.05, alpha_affine=176 * 0.03),
-    albumentations.GridDistortion(p=0.675, distort_limit=0.3),
-    albumentations.OpticalDistortion(p=0.2, distort_limit=0.2, shift_limit=0.2),
 
-    albumentations.ShiftScaleRotate(p=0.56, shift_limit=0.2, scale_limit=0.0, rotate_limit=0),  # shift
-    albumentations.ShiftScaleRotate(p=0.25, shift_limit=0.0, scale_limit=0.2, rotate_limit=0),  # scale
-    """
     train_aug = [
         albumentations.HorizontalFlip(p=0.3),
         albumentations.Rotate(p=0.625, limit=45, interpolation=1, border_mode=0),
