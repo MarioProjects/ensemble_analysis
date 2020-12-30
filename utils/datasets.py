@@ -39,7 +39,14 @@ class CIFAR10Dataset(Dataset):
         if mode == "train":
             data = np.load(os.path.join(self.base_dir, "x_train.npy"))
             labels = np.load(os.path.join(self.base_dir, "y_train.npy"))
-        elif mode == "test":
+            data = data[:int(len(data) * .90)]
+            labels = labels[:int(len(labels) * .90)]
+        elif mode == "validation":
+            data = np.load(os.path.join(self.base_dir, "x_train.npy"))
+            labels = np.load(os.path.join(self.base_dir, "y_train.npy"))
+            data = data[int(len(data) * .90):]
+            labels = labels[int(len(labels) * .90):]
+        else:  # mode == test
             data = np.load(os.path.join(self.base_dir, "x_test.npy"))
             labels = np.load(os.path.join(self.base_dir, "y_test.npy"))
 
@@ -82,17 +89,12 @@ def dataset_selector(train_aug, val_aug, args, is_test=False):
                 test_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=True, drop_last=False
             )
 
-        train_dataset = CIFAR10Dataset(
-            mode="train", transform=train_aug, normalization=args.normalization
-        )
-
-        val_dataset = CIFAR10Dataset(
-            mode="test", transform=val_aug, normalization=args.normalization
-        )
-
+        train_dataset = CIFAR10Dataset(mode="train", transform=train_aug, normalization=args.normalization)
         train_loader = DataLoader(
             train_dataset, batch_size=args.batch_size, pin_memory=True, shuffle=True
         )
+
+        val_dataset = CIFAR10Dataset(mode="validation", transform=val_aug, normalization=args.normalization)
         val_loader = DataLoader(
             val_dataset, batch_size=args.batch_size, pin_memory=True, shuffle=False, drop_last=False
         )
