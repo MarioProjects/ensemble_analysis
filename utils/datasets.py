@@ -14,7 +14,7 @@ class CIFAR10Dataset(Dataset):
     https://www.cs.toronto.edu/~kriz/cifar.html
     """
 
-    def __init__(self, mode, transform, normalization="statistics"):
+    def __init__(self, mode, transform, normalization="statistics", data_prefix=""):
         """
         :param mode: (string) Dataset mode in ["train", "validation"]
         :param transform: (list) List of albumentations applied to image and mask
@@ -27,7 +27,7 @@ class CIFAR10Dataset(Dataset):
         if normalization not in ['reescale', 'standardize', 'statistics']:
             assert False, "Unknown normalization '{}'".format(normalization)
 
-        self.base_dir = "data/CIFAR10"
+        self.base_dir = os.path.join(data_prefix, "data", "CIFAR10")
         self.include_background = False
         self.img_channels = 3
         self.class_to_cat = {
@@ -77,24 +77,28 @@ class CIFAR10Dataset(Dataset):
         return {"image": image, "label": label}
 
 
-def dataset_selector(train_aug, val_aug, args, is_test=False):
+def dataset_selector(train_aug, val_aug, args, is_test=False, data_prefix=""):
 
     if args.dataset == "CIFAR10":
         if is_test:
             test_dataset = CIFAR10Dataset(
-                mode="test", transform=val_aug, normalization=args.normalization
+                mode="test", transform=val_aug, normalization=args.normalization, data_prefix=data_prefix
             )
 
             return DataLoader(
                 test_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=True, drop_last=False
             )
 
-        train_dataset = CIFAR10Dataset(mode="train", transform=train_aug, normalization=args.normalization)
+        train_dataset = CIFAR10Dataset(
+            mode="train", transform=train_aug, normalization=args.normalization, data_prefix=data_prefix
+        )
         train_loader = DataLoader(
             train_dataset, batch_size=args.batch_size, pin_memory=True, shuffle=True
         )
 
-        val_dataset = CIFAR10Dataset(mode="validation", transform=val_aug, normalization=args.normalization)
+        val_dataset = CIFAR10Dataset(
+            mode="validation", transform=val_aug, normalization=args.normalization, data_prefix=data_prefix
+        )
         val_loader = DataLoader(
             val_dataset, batch_size=args.batch_size, pin_memory=True, shuffle=False, drop_last=False
         )

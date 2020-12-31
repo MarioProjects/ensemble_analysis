@@ -22,11 +22,14 @@ test_metrics = MetricsAccumulator(
     args.problem_type, args.metrics
 )
 
-test_metrics, test_logits = val_step(
+test_metrics, test_logits, test_labels = val_step(
     test_loader, model, test_metrics,
 )
 
-torch.save(test_logits, args.output_dir + f"/test_logits_FROM_{args.model_checkpoint.split('/')[-1]}.pt")
+torch.save(
+    {"logits": test_logits, "labels": test_labels},
+    args.output_dir + f"/test_logits_{args.model_checkpoint.split('/')[-1]}"
+)
 
 print("\nResults:")
 test_metrics.report_best()

@@ -138,3 +138,7 @@ data/*
 # Results
 results/*
 !results/.gitkeep
+
+# Logits
+logits/*
+!logits/.gitkeep

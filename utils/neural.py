@@ -188,12 +188,20 @@ def get_criterion(criterion_type, weights_criterion='default'):
     return criterion, weights_criterion, multiclass
 
 
-def create_checkpoint(metrics, model, train_logits, val_logits, model_name, output_dir):
+def create_checkpoint(metrics, model, train_logits, train_labels, val_logits, val_labels,
+                      model_name, output_dir, save_last=False):
     """
     Iterar sobre las diferentes metricas y comprobar si la ultima medicion es mejor que las anteriores
     (debemos comprobar que average!=none - si no tendremos que calcular el average)
     Para cada metrica guardar un checkpint como abajo iterativamente
     Args:
+        val_labels:
+        train_labels:
+        save_last:
+        output_dir:
+        model_name:
+        val_logits:
+        train_logits:
         metrics:
         model:
 
@@ -205,10 +213,17 @@ def create_checkpoint(metrics, model, train_logits, val_logits, model_name, outp
         # check if last epoch mean metric value is the best
         if metrics.metrics_helpers[f"{metric_key}_is_best"]:
             torch.save(model.state_dict(), output_dir + f"/model_{model_name}_best_{metric_key}.pt")
-            torch.save(train_logits, output_dir + f"/train_logits_model_{model_name}_best_{metric_key}.pt")
-            torch.save(val_logits, output_dir + f"/val_logits_model_{model_name}_best_{metric_key}.pt")
+            torch.save(
+                {"logits": train_logits, "labels": train_labels},
+                output_dir + f"/train_logits_model_{model_name}_best_{metric_key}.pt"
+            )
+            torch.save(
+                {"logits": val_logits, "labels": val_labels},
+                output_dir + f"/val_logits_model_{model_name}_best_{metric_key}.pt"
+            )
 
-    torch.save(model.state_dict(), output_dir + "/model_" + model_name + "_last.pt")
+    if save_last:
+        torch.save(model.state_dict(), output_dir + "/model_" + model_name + "_last.pt")
 
 
 def calculate_loss(y_true, y_pred, criterion, weights_criterion, multiclass_criterion, num_classes):
@@ -267,13 +282,14 @@ def train_step(train_loader, model, criterion, weights_criterion, multiclass_cri
     Returns:
 
     """
-    logits = []
+    logits, labels = [], []
     model.train()
     for batch_indx, batch in enumerate(train_loader):
         image, label = batch["image"].cuda(), batch["label"].cuda()
         optimizer.zero_grad()
         prob_preds = model(image)
         logits.append(prob_preds)
+        labels.append(label)
         loss = calculate_loss(
             label, prob_preds, criterion, weights_criterion, multiclass_criterion,
             train_loader.dataset.num_classes
@@ -284,43 +300,26 @@ def train_step(train_loader, model, criterion, weights_criterion, multiclass_cri
         train_metrics.record(prob_preds, label)
 
     train_metrics.update()
-    return train_metrics, torch.cat(logits)
+    return train_metrics, torch.cat(logits), torch.cat(labels)
 
 
 def val_step(val_loader, model, val_metrics):
-
-    logits = []
+    logits, labels = [], []
     model.eval()
     with torch.no_grad():
         for batch_indx, batch in enumerate(val_loader):
             image, label = batch["image"].cuda(), batch["label"].cuda()
             prob_preds = model(image)
             logits.append(prob_preds)
+            labels.append(label)
             val_metrics.record(prob_preds, label)
 
     val_metrics.update()
-    return val_metrics, torch.cat(logits)
-
-
-def val_step_ensemble(val_loader, model_list, val_metrics):
-
-    logits = []
-    model.eval()
-    with torch.no_grad():
-        for batch_indx, batch in enumerate(val_loader):
-            image, label = batch["image"].cuda(), batch["label"].cuda()
-
-            prob_preds = model(image)
-
-            logits.append(prob_preds)
-            val_metrics.record(prob_preds, label)
-
-    val_metrics.update()
-    return val_metrics, torch.cat(logits)
+    return val_metrics, torch.cat(logits), torch.cat(labels)
 
 
 def finish_swa(swa_model, train_loader, val_loader, args):
-    if args.swa_start == -1:  # If swa was not used, do not perform nothing
+    if args.swa_start == -1 or args.swa_start > args.epochs:  # If swa was not used, do not perform nothing
         return
 
     print("\nFinalizing SWA...")
@@ -345,14 +344,10 @@ def finish_swa(swa_model, train_loader, val_loader, args):
     )
 
     swa_metrics = MetricsAccumulator(
-        args.problem_type, args.metrics, train_loader.dataset.num_classes, average="mean",
-        include_background=train_loader.dataset.include_background, mask_reshape_method=args.mask_reshape_method
+        args.problem_type, args.metrics,
     )
 
-    swa_metrics = val_step(
-        val_loader, swa_model, swa_metrics, generated_overlays=args.generated_overlays,
-        overlays_path=f"{args.output_dir}/overlays_swa"
-    )
+    swa_metrics, swa_logits, swa_labels = val_step(val_loader, swa_model, swa_metrics)
 
     print("SWA validation metrics")
     swa_metrics.report_best()

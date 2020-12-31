@@ -50,11 +50,11 @@ for current_epoch in range(args.epochs):
 
     defrosted = check_defrost(model, defrosted, current_epoch, args.defrost_epoch)
 
-    train_metrics, train_logits = train_step(
+    train_metrics, train_logits, train_labels = train_step(
         train_loader, model, criterion, weights_criterion, multiclass_criterion, optimizer, train_metrics
     )
 
-    val_metrics, val_logits = val_step(val_loader, model, val_metrics)
+    val_metrics, val_logits, val_labels = val_step(val_loader, model, val_metrics)
 
     current_lr = get_current_lr(optimizer)
     log_epoch((current_epoch + 1), current_lr, train_metrics, val_metrics, header)
@@ -67,7 +67,9 @@ for current_epoch in range(args.epochs):
         swa_scheduler.step()
     else:
         # Only save checkpoints when not applying SWA -> only want save last model using SWA
-        create_checkpoint(val_metrics, model, train_logits, val_logits, args.model_name, args.output_dir)
+        create_checkpoint(
+            val_metrics, model, train_logits, train_labels, val_logits, val_labels, args.model_name, args.output_dir
+        )
         scheduler_step(optimizer, scheduler, val_metrics, args)
 
 print("\nBest Validation Results:")
