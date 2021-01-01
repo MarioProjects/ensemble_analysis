@@ -189,7 +189,7 @@ def get_criterion(criterion_type, weights_criterion='default'):
 
 
 def create_checkpoint(metrics, model, train_logits, train_labels, val_logits, val_labels,
-                      model_name, output_dir, save_last=False):
+                      args, save_last=False):
     """
     Iterar sobre las diferentes metricas y comprobar si la ultima medicion es mejor que las anteriores
     (debemos comprobar que average!=none - si no tendremos que calcular el average)
@@ -198,8 +198,7 @@ def create_checkpoint(metrics, model, train_logits, train_labels, val_logits, va
         val_labels:
         train_labels:
         save_last:
-        output_dir:
-        model_name:
+        args:
         val_logits:
         train_logits:
         metrics:
@@ -212,18 +211,18 @@ def create_checkpoint(metrics, model, train_logits, train_labels, val_logits, va
     for metric_key in dict_metrics:
         # check if last epoch mean metric value is the best
         if metrics.metrics_helpers[f"{metric_key}_is_best"]:
-            torch.save(model.state_dict(), output_dir + f"/model_{model_name}_best_{metric_key}.pt")
+            torch.save(model.state_dict(), args.output_dir + f"/model_{args.model_name}_best_{metric_key}.pt")
             torch.save(
-                {"logits": train_logits, "labels": train_labels},
-                output_dir + f"/train_logits_model_{model_name}_best_{metric_key}.pt"
+                {"logits": train_logits, "labels": train_labels, "config": args},
+                args.output_dir + f"/train_logits_model_{args.model_name}_best_{metric_key}.pt"
             )
             torch.save(
-                {"logits": val_logits, "labels": val_labels},
-                output_dir + f"/val_logits_model_{model_name}_best_{metric_key}.pt"
+                {"logits": val_logits, "labels": val_labels, "config": args},
+                args.output_dir + f"/val_logits_model_{args.model_name}_best_{metric_key}.pt"
             )
 
     if save_last:
-        torch.save(model.state_dict(), output_dir + "/model_" + model_name + "_last.pt")
+        torch.save(model.state_dict(), args.output_dir + "/model_" + args.model_name + "_last.pt")
 
 
 def calculate_loss(y_true, y_pred, criterion, weights_criterion, multiclass_criterion, num_classes):

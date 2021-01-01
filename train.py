@@ -68,7 +68,7 @@ for current_epoch in range(args.epochs):
     else:
         # Only save checkpoints when not applying SWA -> only want save last model using SWA
         create_checkpoint(
-            val_metrics, model, train_logits, train_labels, val_logits, val_labels, args.model_name, args.output_dir
+            val_metrics, model, train_logits, train_labels, val_logits, val_labels, args,
         )
         scheduler_step(optimizer, scheduler, val_metrics, args)
 

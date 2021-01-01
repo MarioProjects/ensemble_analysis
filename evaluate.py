@@ -27,7 +27,7 @@ test_metrics, test_logits, test_labels = val_step(
 )
 
 torch.save(
-    {"logits": test_logits, "labels": test_labels},
+    {"logits": test_logits, "labels": test_labels, "config": args},
     args.output_dir + f"/test_logits_{args.model_checkpoint.split('/')[-1]}"
 )
 
