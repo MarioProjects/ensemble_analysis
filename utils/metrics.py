@@ -94,6 +94,9 @@ class MetricsAccumulator:
                 self.metrics[metric_key][-1], align='^', width=len(metric_key), prec=3
             )
 
+            if self.metrics_helpers[f"{metric_key}_is_best"]:
+                output_str += "*"
+
         return output_str
 
 
