@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import pretty_errors
+
 # ---- My utils ----
 from utils.neural import *
 from utils.metrics import compute_accuracy
 from utils.calibration import compute_calibration_metrics
 
+pretty_errors.mono()
 
 def ensemble_evaluation(logits_dir="logits", prefix="test", ensemble_strategy=["avg, vote"]):
     # Check ensemble strategies are okey
@@ -63,10 +66,10 @@ def ensemble_evaluation(logits_dir="logits", prefix="test", ensemble_strategy=["
 
 
     # -- Display Results --
-    with_names = max(len("Avg probs ensemble"), max([len(x) for x in logits_names]))
+    width_methods = max(len("Avg probs ensemble"), max([len(x) for x in logits_names]))
 
     header = "| {:{align}{widthL}} | {:{align}{widthA}} | {:{align}{widthM}} | {:{align}{widthM}} | {:{align}{widthM}} | {:{align}{widthM}} |".format(
-        "Method", "Accuracy", "ECE", "MCE", "BRIER", "NNL", align='^', widthL=with_names, widthA=8, widthM=6,
+        "Method", "Accuracy", "ECE", "MCE", "BRIER", "NNL", align='^', widthL=width_methods, widthA=8, widthM=6,
     )
     print("".join(["_"] * len(header)))
     print(header)
@@ -76,7 +79,7 @@ def ensemble_evaluation(logits_dir="logits", prefix="test", ensemble_strategy=["
                 logit_name, logits_accuracy[indx],
                 logits_calibration_metrics[indx]["ece"], logits_calibration_metrics[indx]["mce"],
                 logits_calibration_metrics[indx]["brier"], logits_calibration_metrics[indx]["nnl"],
-                align='^', widthL=with_names, widthA=8, widthM=6,
+                align='^', widthL=width_methods, widthA=8, widthM=6,
         )
         print(line)
 
@@ -87,7 +90,7 @@ def ensemble_evaluation(logits_dir="logits", prefix="test", ensemble_strategy=["
         ece, mce, brier, nnl = compute_calibration_metrics(probs_avg, labels, apply_softmax=False, bins=15)
         line = "| {:{align}{widthL}} | {:{align}{widthA}} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} |".format(
                "Avg probs ensemble", probs_avg_accuracy, ece, mce, brier, nnl,
-               align='^', widthL=with_names, widthA=8, widthM=6,
+               align='^', widthL=width_methods, widthA=8, widthM=6,
         )
         print(line)
 
@@ -99,7 +102,7 @@ def ensemble_evaluation(logits_dir="logits", prefix="test", ensemble_strategy=["
         vote_accuracy = (vote_list == labels).sum().item() / len(labels)
         line = "| {:{align}{widthL}} | {:{align}{widthA}} | {:{align}{widthM}} | {:{align}{widthM}} | {:{align}{widthM}} | {:{align}{widthM}} |".format(
                "Vote ensemble", vote_accuracy, "----", "----", "----", "----",
-               align='', widthL=with_names, widthA=8, widthM=6,
+               align='', widthL=width_methods, widthA=8, widthM=6,
         )
         print(line)
 
