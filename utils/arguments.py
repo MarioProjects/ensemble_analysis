@@ -12,7 +12,7 @@ class SmartFormatter(argparse.HelpFormatter):
         return argparse.HelpFormatter._split_lines(self, text, width)
 
 
-parser = argparse.ArgumentParser(description='PAIP 2020 Challenge - CRC Prediction', formatter_class=SmartFormatter)
+parser = argparse.ArgumentParser(description='Ensemble Analysis', formatter_class=SmartFormatter)
 
 parser.add_argument("--gpu", type=str, default="0,1")
 parser.add_argument("--seed", type=int, default=2020)
@@ -42,7 +42,7 @@ parser.add_argument('--metrics', '--names-list', nargs='+', default=[])
 
 parser.add_argument('--generated_overlays', type=int, default=-1, help='Number of generate masks overlays')
 
-parser.add_argument('--optimizer', type=str, default='adam', help='Optimizer for training')
+parser.add_argument('--optimizer', type=str, default='sgd', help='Optimizer for training')
 parser.add_argument('--scheduler', type=str, default="", help='Where is the model checkpoint saved')
 parser.add_argument('--plateau_metric', type=str, default="", help='Metric name to set plateau')
 parser.add_argument('--learning_rate', type=float, default=0.01, help='Learning rate')

@@ -4,7 +4,7 @@ from torch.optim.swa_utils import AveragedModel
 from models.classification import model_selector_classification
 
 
-def model_selector(problem_type, model_name, num_classes, in_channels, devices="", checkpoint="", from_swa=False):
+def model_selector(problem_type, model_name, num_classes, in_channels, checkpoint="", from_swa=False):
     """
 
     Args:
@@ -12,7 +12,6 @@ def model_selector(problem_type, model_name, num_classes, in_channels, devices="
         model_name:
         num_classes:
         in_channels:
-        devices:
         checkpoint:
         from_swa:
 

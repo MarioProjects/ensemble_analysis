@@ -23,7 +23,7 @@ train_loader, val_loader = dataset_selector(train_aug, val_aug, args)
 
 model = model_selector(
     args.problem_type, args.model_name, train_loader.dataset.num_classes,
-    in_channels=train_loader.dataset.img_channels, devices=args.gpu, checkpoint=args.model_checkpoint
+    in_channels=train_loader.dataset.img_channels, checkpoint=args.model_checkpoint
 )
 
 swa_model = None
