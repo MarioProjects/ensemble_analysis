@@ -32,7 +32,8 @@ problem_type="classification"
 
 # Available models:
 #   -> kuangliu_resnet[18-34-50-101-152] - osmr_resnet18 - osmr_resnet18_pretrained
-model="kuangliu_resnet18"
+#   -> kuangliu_densenet[121-161] - kuangliu_densenet
+model="kuangliu_densenet"
 
 img_size=32
 crop_size=32

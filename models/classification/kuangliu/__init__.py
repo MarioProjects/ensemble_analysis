@@ -30,6 +30,13 @@ def kuangliu_selector(model_name, in_channels, num_classes):
         model = ResNet101(in_channels, num_classes)
     elif "resnet152" in model_name:
         model = ResNet152(in_channels, num_classes)
+
+    elif "densenet121" in model_name:
+        model = DenseNet121()
+    elif "densenet161" in model_name:
+        model = DenseNet161()
+    elif "densenet" in model_name:
+        model = densenet_cifar()
     
     else:
         assert False, "Unknown model selected: {}".format(model_name)
