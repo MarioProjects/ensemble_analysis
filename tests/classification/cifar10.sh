@@ -6,12 +6,7 @@
 if [ ! -d "data/CIFAR10" ]
 then
     echo "CIFAR10 data not found at 'data' directory. Downloading..."
-    wget -nv --load-cookies /tmp/cookies.txt \
-      "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt \
-      --keep-session-cookies --no-check-certificate \
-      'https://docs.google.com/uc?export=download&id=18AEpsx5-_LzkrV-H9IJzM72sfbo3yzEp' \
-      -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=18AEpsx5-_LzkrV-H9IJzM72sfbo3yzEp" \
-      -O cifar10.tar.gz && rm -rf /tmp/cookies.txt
+    curl -O -J https://nextcloud.maparla.duckdns.org/s/N8eW6MkyQyLEfRz/download
     mkdir -p data/CIFAR10
     tar -zxf cifar10.tar.gz  -C data/CIFAR10/
     rm cifar10.tar.gz
