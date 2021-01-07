@@ -234,7 +234,7 @@ def calculate_loss(y_true, y_pred, criterion, weights_criterion, multiclass_crit
         criterion:
         weights_criterion:
         multiclass_criterion:
-
+        num_classes:
     Returns:
 
     """

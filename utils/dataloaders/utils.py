@@ -1,7 +1,9 @@
 import nibabel as nib
 import pydicom
 from PIL import Image
-from utils.datasets import *
+import numpy as np
+import torch
+import albumentations
 
 
 def load_tif(tif_path):
@@ -124,6 +126,8 @@ def apply_volume_augmentations(list_images, transform, img_transform):
     """
     Apply same augmentations to volume images
     :param list_images: (array) [num_images, height, width] Images to transform
+    :param transform: (albumentation transform)
+    :param img_transform: (albumentation transform)
     :return: (array) [num_images, height, width] Transformed Images
     """
     if img_transform:

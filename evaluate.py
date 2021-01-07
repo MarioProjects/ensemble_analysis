@@ -5,7 +5,7 @@
 from models import model_selector
 from utils.arguments import *
 from utils.data_augmentation import data_augmentation_selector
-from utils.datasets import dataset_selector
+from utils.dataloaders import dataset_selector
 from utils.neural import *
 
 _, val_aug = data_augmentation_selector(
