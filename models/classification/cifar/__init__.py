@@ -1,3 +1,4 @@
+from .shake_resnet import ShakeResNet
 from .vgg import *
 from .dpn import *
 from .lenet import *
@@ -18,7 +19,7 @@ from .dla_simple import *
 from .dla import *
 
 
-def kuangliu_selector(model_name, in_channels, num_classes):
+def cifar_selector(model_name, in_channels, num_classes):
     
     if "resnet18" in model_name:
         model = ResNet18(in_channels, num_classes)
@@ -37,6 +38,9 @@ def kuangliu_selector(model_name, in_channels, num_classes):
         model = DenseNet161()
     elif "densenet" in model_name:
         model = densenet_cifar()
+
+    elif 'shakeshake26_2x96d' in model_name:
+        model = ShakeResNet(26, 96, num_classes)
     
     else:
         assert False, "Unknown model selected: {}".format(model_name)

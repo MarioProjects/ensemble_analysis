@@ -56,7 +56,7 @@ def get_optimizer(optmizer_type, model, lr=0.1):
     :return: Instance of specified optimizer
     """
     if optmizer_type == "sgd":
-        optim = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4)
+        optim = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=0.001, nesterov=True)
     elif optmizer_type == "adam":
         optim = torch.optim.Adam(model.parameters(), lr=lr)
     else:
@@ -83,7 +83,7 @@ def get_scheduler(scheduler_name, optimizer, epochs=40, min_lr=0.002, max_lr=0.0
     elif scheduler_name == "plateau":
         return torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, cooldown=6, factor=0.1, patience=12)
     elif scheduler_name == "one_cycle_lr":
-        return torch.optim.lr_scheduler.OneCycleLR(optimizer, total_steps=epochs, max_lr=max_lr)
+        return torch.optim.lr_scheduler.OneCycleLR(optimizer, total_steps=epochs, max_lr=max_lr, anneal_strategy="cos")
     elif scheduler_name == "cyclic":
         return torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=min_lr, max_lr=max_lr, step_size_up=scheduler_steps)
     elif scheduler_name == "constant":

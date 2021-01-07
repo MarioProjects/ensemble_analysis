@@ -33,7 +33,7 @@ problem_type="classification"
 # Available models:
 #   -> kuangliu_resnet[18-34-50-101-152] - osmr_resnet18 - osmr_resnet18_pretrained
 #   -> kuangliu_densenet[121-161] - kuangliu_densenet
-model="kuangliu_resnet18"
+model="cifar_shakeshake26_2x96d"
 
 img_size=32
 crop_size=32
@@ -75,9 +75,4 @@ python3 -u train.py --gpu $gpu --dataset $dataset --model_name $model --img_size
 model_checkpoint="$output_dir/model_${model}_best_accuracy.pt"
 python3 -u evaluate.py --gpu $gpu --dataset $dataset --model_name $model --img_size $img_size --crop_size $crop_size \
 --batch_size $batch_size --normalization $normalization --output_dir "$output_dir" \
---metrics accuracy --problem_type $problem_type --model_checkpoint "$model_checkpoint" --seed $seed
-
-#model_checkpoint="$output_dir/model_${model}_${epochs-swa_start}epochs_swalr${swa_lr}.pt"
-#python3 -u evaluate.py --gpu $gpu --dataset $dataset --model_name $model --img_size $img_size --crop_size $crop_size \
-#--swa_checkpoint --batch_size $batch_size --normalization $normalization --output_dir "$output_dir" \
-#--metrics accuracy --problem_type $problem_type --model_checkpoint "$model_checkpoint" --seed $seed
+--metrics accuracy --problem_type $problem_type --model_checkpoint "$model_checkpoint" --seed $seed --notify

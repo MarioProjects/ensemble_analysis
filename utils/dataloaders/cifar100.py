@@ -6,6 +6,7 @@ import albumentations
 
 import utils.dataloaders.utils as d
 
+_CIFAR_MEAN, _CIFAR_STD = (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
 
 class CIFAR100Dataset(Dataset):
     """
@@ -78,7 +79,7 @@ class CIFAR100Dataset(Dataset):
 
         image, mask = d.apply_augmentations(image, self.transform, None, None)
         if self.normalization == "statistics":
-            norm_transform = albumentations.Normalize(mean=(0.4914, 0.4822, 0.4465), std=(0.2023, 0.1994, 0.2010))
+            norm_transform = albumentations.Normalize(mean=_CIFAR_MEAN, std=_CIFAR_STD)
             image = norm_transform(image=image)["image"]
         else:
             image = d.apply_normalization(image, self.normalization)
