@@ -68,4 +68,5 @@ and pass it through argument to `ensemble.py`.
 ### Benchmarks
 
 https://benchmarks.ai/cifar-10
+https://benchmarks.ai/cifar-100
 
