@@ -13,3 +13,4 @@ tqdm
 scikit-image
 pydicom
 pretty_errors
+torch

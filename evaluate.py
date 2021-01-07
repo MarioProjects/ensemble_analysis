@@ -15,7 +15,7 @@ test_loader = dataset_selector(None, val_aug, args, is_test=True)
 
 model = model_selector(
     args.problem_type, args.model_name, test_loader.dataset.num_classes, from_swa=args.swa_checkpoint,
-    in_channels=test_loader.dataset.img_channels, devices=args.gpu, checkpoint=args.model_checkpoint
+    in_channels=test_loader.dataset.img_channels, checkpoint=args.model_checkpoint
 )
 
 test_metrics = MetricsAccumulator(
