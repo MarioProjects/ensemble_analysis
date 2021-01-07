@@ -31,8 +31,8 @@ dataset="CIFAR100"
 problem_type="classification"
 
 # Available models:
-#   -> kuangliu_resnet[18-34-50-101-152] - osmr_resnet18 - osmr_resnet18_pretrained
-#   -> kuangliu_densenet[121-161] - kuangliu_densenet
+#   -> cifar_resnet[18-34-50-101-152] - osmr_resnet18 - osmr_resnet18_pretrained
+#   -> cifar_densenet[121-161] - cifar_densenet - cifar_wresnet28_10 - cifar_shakeshake26_2x96d
 model="cifar_shakeshake26_2x96d"
 
 img_size=32

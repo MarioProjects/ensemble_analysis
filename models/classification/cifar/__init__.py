@@ -17,6 +17,7 @@ from .efficientnet import *
 from .regnet import *
 from .dla_simple import *
 from .dla import *
+from .wideresnet import WideResNet
 
 
 def cifar_selector(model_name, in_channels, num_classes):
@@ -39,6 +40,8 @@ def cifar_selector(model_name, in_channels, num_classes):
     elif "densenet" in model_name:
         model = densenet_cifar()
 
+    elif 'wresnet28_10' in model_name:
+        model = WideResNet(28, 10, dropout_rate=0.0, num_classes=num_classes)
     elif 'shakeshake26_2x96d' in model_name:
         model = ShakeResNet(26, 96, num_classes)
     
