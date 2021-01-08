@@ -8,9 +8,7 @@ from utils.data_augmentation import data_augmentation_selector
 from utils.dataloaders import dataset_selector
 from utils.neural import *
 
-_, val_aug = data_augmentation_selector(
-    args.data_augmentation, args.img_size, args.crop_size
-)
+_, val_aug = data_augmentation_selector(args.data_augmentation)
 test_loader = dataset_selector(None, val_aug, args, is_test=True)
 
 model = model_selector(

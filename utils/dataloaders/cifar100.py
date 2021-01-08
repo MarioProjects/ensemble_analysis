@@ -6,7 +6,6 @@ import albumentations
 
 import utils.dataloaders.utils as d
 
-_CIFAR_MEAN, _CIFAR_STD = (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
 
 class CIFAR100Dataset(Dataset):
     """
@@ -17,7 +16,7 @@ class CIFAR100Dataset(Dataset):
     def __init__(self, mode, transform, normalization="statistics", data_prefix=""):
         """
         :param mode: (string) Dataset mode in ["train", "validation"]
-        :param transform: (list) List of albumentations applied to image and mask
+        :param transform: (list) List of transforms applied to image and mask
         :param normalization: (str) Normalization mode. One of 'reescale', 'standardize', 'statistics'
         """
 
@@ -67,7 +66,7 @@ class CIFAR100Dataset(Dataset):
         self.mode = mode
         self.normalization = normalization
 
-        self.transform = albumentations.Compose(transform)
+        self.transform = transform
 
     def __len__(self):
         return len(self.data)
@@ -76,14 +75,6 @@ class CIFAR100Dataset(Dataset):
 
         image = self.data[idx]
         label = self.labels[idx]
-
-        image, mask = d.apply_augmentations(image, self.transform, None, None)
-        if self.normalization == "statistics":
-            norm_transform = albumentations.Normalize(mean=_CIFAR_MEAN, std=_CIFAR_STD)
-            image = norm_transform(image=image)["image"]
-        else:
-            image = d.apply_normalization(image, self.normalization)
-        image = image.transpose(2, 0, 1)
-        image = torch.from_numpy(image).float()
+        image = self.transform(image)
 
         return {"image": image, "label": label}

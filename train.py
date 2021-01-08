@@ -17,7 +17,8 @@ pretty_errors.mono()
 set_seed(args.seed)
 
 train_aug, val_aug = data_augmentation_selector(
-    args.data_augmentation, args.img_size, args.crop_size
+    args.data_augmentation, cutout_size=args.cutout,
+    randaugment=args.randaugment, n=args.randaugment_N, m=args.randaugment_M
 )
 train_loader, val_loader = dataset_selector(train_aug, val_aug, args)
 

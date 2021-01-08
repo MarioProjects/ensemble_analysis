@@ -14,3 +14,4 @@ scikit-image
 pydicom
 pretty_errors
 torch
+git+https://github.com/ildoonet/pytorch-randaugment

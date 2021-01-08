@@ -74,3 +74,6 @@ and pass it through argument to `ensemble.py`.
 https://benchmarks.ai/cifar-10
 https://benchmarks.ai/cifar-100
 
+### Credits
+
+  - RandAugment Pytorch Implementation: https://github.com/ildoonet/pytorch-randaugment

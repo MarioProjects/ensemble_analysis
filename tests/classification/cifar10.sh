@@ -49,13 +49,17 @@ optimizer="sgd"
 # Available data augmentation policies:
 # "none" - "random_crops" - "rotations" - "vflips" - "hflips" - "elastic_transform" - "grid_distortion" - "shift"
 # "scale" - "optical_distortion" - "coarse_dropout" or "cutout" - "downscale"
-data_augmentation="cifar10"
+data_augmentation="cifar"
 normalization="statistics"  # reescale - standardize - statistics
 
 # Available criterions for classification:
 # ce
 criterion="ce"
 weights_criterion="1.0"
+
+# RandAugment Parameters (Dont forget to add --randaugment flag to train.py arguments)
+randaugment_N=3  # shakeshake26_2x96d->3 / wresnet28_10->3
+randaugment_M=9  # shakeshake26_2x96d->9 / wresnet28_10->5
 
 output_dir="results/$dataset/$model/seed_$seed/$optimizer/${scheduler}_lr${lr}/${criterion}_weights${weights_criterion}"
 output_dir="$output_dir/normalization_${normalization}/da${data_augmentation}"
@@ -64,10 +68,11 @@ python3 -u train.py --gpu $gpu --dataset $dataset --model_name $model --img_size
 --epochs $epochs --swa_start $swa_start --batch_size $batch_size --defrost_epoch $defrost_epoch \
 --scheduler $scheduler --learning_rate $lr --swa_lr $swa_lr --optimizer $optimizer --criterion $criterion \
 --normalization $normalization --weights_criterion "$weights_criterion" --data_augmentation $data_augmentation \
---output_dir "$output_dir" --metrics accuracy --problem_type $problem_type \
---scheduler_steps 150 250 --seed $seed
+--output_dir "$output_dir" --metrics accuracy --problem_type $problem_type --scheduler_steps 150 250 --seed $seed \
+--randaugment_N $randaugment_N --randaugment_M $randaugment_M --randaugment
 
 model_checkpoint="$output_dir/model_${model}_best_accuracy.pt"
 python3 -u evaluate.py --gpu $gpu --dataset $dataset --model_name $model --img_size $img_size --crop_size $crop_size \
 --batch_size $batch_size --normalization $normalization --output_dir "$output_dir" \
---metrics accuracy --problem_type $problem_type --model_checkpoint "$model_checkpoint" --seed $seed --notify
+--metrics accuracy --problem_type $problem_type --model_checkpoint "$model_checkpoint" --seed $seed \
+ --data_augmentation $data_augmentation --notify
