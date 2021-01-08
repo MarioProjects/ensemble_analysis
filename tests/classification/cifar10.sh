@@ -26,7 +26,7 @@ dataset="CIFAR10"
 problem_type="classification"
 
 # Available models:
-#   -> kcifar_resnet[18-34-50-101-152] - osmr_resnet18 - osmr_resnet18_pretrained
+#   -> cifar_resnet[18-34-50-101-152] - osmr_resnet18 - osmr_resnet18_pretrained
 #   -> cifar_densenet[121-161] - cifar_densenet - cifar_wresnet28_10 - cifar_shakeshake26_2x96d
 model="cifar_wresnet28_10"
 
@@ -75,4 +75,4 @@ model_checkpoint="$output_dir/model_${model}_best_accuracy.pt"
 python3 -u evaluate.py --gpu $gpu --dataset $dataset --model_name $model --img_size $img_size --crop_size $crop_size \
 --batch_size $batch_size --normalization $normalization --output_dir "$output_dir" \
 --metrics accuracy --problem_type $problem_type --model_checkpoint "$model_checkpoint" --seed $seed \
- --data_augmentation $data_augmentation --notify
+--data_augmentation $data_augmentation --notify
