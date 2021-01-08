@@ -33,8 +33,8 @@ parser.add_argument('--crop_size', type=int, default=224, help='Center crop squa
 parser.add_argument('--cutout', type=int, default=16, help='Cutout size')
 
 parser.add_argument('--randaugment', action='store_true', help='Whether apply or not RandAugment')
-parser.add_argument('--randaugment_N', type=int, default=16, help='(RandAugment) Number of augmentation')
-parser.add_argument('--randaugment_M', type=int, default=16, help='(RandAugment) Magnitude for all the transformations')
+parser.add_argument('--randaugment_N', type=int, default=0, help='(RandAugment) Number of augmentation')
+parser.add_argument('--randaugment_M', type=int, default=0, help='(RandAugment) Magnitude for all the transformations')
 
 parser.add_argument('--normalization', type=str, required=True, help='Data normalization method')
 parser.add_argument('--add_depth', action='store_true', help='If apply image transformation 1 to 3 channels or not')
