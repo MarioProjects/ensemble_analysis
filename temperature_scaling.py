@@ -29,6 +29,7 @@ parser.add_argument('--verbose', action='store_true', help='Display or not tempe
 parser.add_argument('--epochs', type=int, default=100, help='Total number epochs for training')
 parser.add_argument('--batch_size', type=int, default=128, help='Batch Size for training')
 parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate')
+parser.add_argument('--logits_dir', type=str, default="logits", help='Logits directory')
 parser.add_argument('--scheduler_steps', '--arg', nargs='+', type=int, help='Steps for learning rate decay')
 args = parser.parse_args()
 
@@ -36,7 +37,7 @@ pretty_errors.mono()
 verbose = args.verbose  # Display or not temperature learning process
 
 # ---- Load logits ----
-logits_dir = "logits"
+logits_dir = args.logits_dir
 
 # -> Validation Logits
 prefix = "val"

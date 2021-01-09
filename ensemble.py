@@ -8,11 +8,28 @@ from utils.logits import *
 from utils.neural import *
 from utils.metrics import compute_accuracy
 from utils.calibration import compute_calibration_metrics
+import argparse
+
+
+class SmartFormatter(argparse.HelpFormatter):
+
+    def _split_lines(self, text, width):
+        if text.startswith('R|'):
+            return text[2:].splitlines()
+        # this is the RawTextHelpFormatter._split_lines
+        return argparse.HelpFormatter._split_lines(self, text, width)
+
+
+parser = argparse.ArgumentParser(description='Ensemble Analysis', formatter_class=SmartFormatter)
+parser.add_argument('--logits_dir', type=str, default="logits", help='Logits directory')
+args = parser.parse_args()
 
 pretty_errors.mono()
 
+logits_dir = args.logits_dir
 
-def ensemble_evaluation(logits_dir="logits", prefix="test", ensemble_strategy=None):
+
+def ensemble_evaluation(logits_directory, prefix, ensemble_strategy=None):
     # Check ensemble strategies are fine
     available_strategies = ["avg", "vote"]
     if ensemble_strategy is None or len(ensemble_strategy) == 0:
@@ -23,7 +40,7 @@ def ensemble_evaluation(logits_dir="logits", prefix="test", ensemble_strategy=No
             assert False, f"Unknown strategy {strategy}"
 
     # Get logits paths
-    logits_paths = get_logits_paths(logits_dir, prefix)
+    logits_paths = get_logits_paths(logits_directory, prefix)
 
     # Get logits and labels
     logits_list, labels_list, logits_names, logits_accuracy = load_logits(logits_paths, get_accuracy=True)
@@ -83,7 +100,7 @@ def ensemble_evaluation(logits_dir="logits", prefix="test", ensemble_strategy=No
 
 
 print("\n---- Validation evaluation ----\n")
-ensemble_evaluation("logits", prefix="val", ensemble_strategy=["avg"])
+ensemble_evaluation(logits_dir, prefix="val", ensemble_strategy=["avg"])
 
 print("\n---- Test evaluation ----\n")
-ensemble_evaluation("logits", prefix="test", ensemble_strategy=["avg"])
+ensemble_evaluation(logits_dir, prefix="test", ensemble_strategy=["avg"])
