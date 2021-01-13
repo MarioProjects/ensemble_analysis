@@ -22,7 +22,7 @@ def load_logits(logits_paths, get_accuracy=False):
     logits_list, labels_list, logits_names, logits_accuracy = [], [], [], []
     for lp in logits_paths:
         logits_name = "/".join(lp.split("/")[-2:])
-        info = torch.load(lp)
+        info = torch.load(lp, map_location=torch.device('cpu'))
         logits = info["logits"].cpu()
         labels = info["labels"].cpu()
 

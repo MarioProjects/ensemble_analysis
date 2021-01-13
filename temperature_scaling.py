@@ -42,21 +42,33 @@ logits_dir = args.logits_dir
 # -> Validation Logits
 prefix = "val"
 val_logits_paths = get_logits_paths(logits_dir, prefix)
+val_logits_list, val_labels_list, val_logits_names, _ = load_logits(val_logits_paths, get_accuracy=False)
+val_labels = val_labels_list[0]
+
+# -> Validation Avg Ensemble
+prefix = "val_avg_ensemble"
+val_avg_ensemble_logits_paths = get_logits_paths(logits_dir, prefix)
+val_avg_ensemble_logits_list, val_avg_ensemble_labels_list, val_avg_ensemble_logits_names, _ = load_logits(
+    val_avg_ensemble_logits_paths, get_accuracy=False
+)
+val_avg_ensemble_labels = val_avg_ensemble_labels_list[0]
+
+if not (val_avg_ensemble_labels == val_labels).all():
+    assert False, "Validation logits and Validation ensemble logits should be equal!"
 
 # -> Test Logits
 prefix = "test"
 test_logits_paths = get_logits_paths(logits_dir, prefix)
-
-# ---- Load logits and labels ----
-
-# -> Validation
-
-val_logits_list, val_labels_list, val_logits_names, _ = load_logits(val_logits_paths, get_accuracy=False)
-val_labels = val_labels_list[0]
-
-# -> Test
 test_logits_list, test_labels_list, test_logits_names, _ = load_logits(test_logits_paths, get_accuracy=False)
 test_labels = test_labels_list[0]
+
+# -> Test Avg Ensemble
+prefix = "test_avg_ensemble"
+test_avg_ensemble_logits_paths = get_logits_paths(logits_dir, prefix)
+test_avg_ensemble_logits_list, test_avg_ensemble_labels_list, test_avg_ensemble_logits_names, _ = load_logits(
+    test_avg_ensemble_logits_paths, get_accuracy=False
+)
+test_avg_ensemble_labels = test_avg_ensemble_labels_list[0]
 
 
 # ---- TEMPERATURE SCALING ----
@@ -91,22 +103,16 @@ def chunks(lst, n):
         yield lst[i:i + n]
 
 
-# Training parameters
-lr = args.learning_rate
-batch_size = args.batch_size
-criterion = nn.CrossEntropyLoss().cuda()
+def learn_temperature(model_logits, model_labels):
+    # Training parameters
+    criterion = nn.CrossEntropyLoss().cuda()
+    if args.scheduler_steps is None:
+        scheduler_steps = np.arange(0, args.epochs, args.epochs // 5)
 
-if args.scheduler_steps is None:
-    args.scheduler_steps = np.arange(0, args.epochs, args.epochs//5)
-
-# Create 1 temperature parameter per model / val logits
-temperatures = [TempScaling() for i in range(len(val_logits_list))]
-optimizers = [SGD(temperature.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4) for temperature in temperatures]
-schedulers = [MultiStepLR(optimizer, milestones=args.scheduler_steps, gamma=0.1) for optimizer in optimizers]
-
-print(f"\n{len(temperatures)} Models. Searching Temperatures...")
-for indx, (temperature, optimizer, scheduler) in enumerate(zip(temperatures, optimizers, schedulers)):
-    val_model_logits = val_logits_list[indx]
+    # Create 1 temperature parameter per model / val logits
+    temperature = TempScaling()
+    optimizer = SGD(temperature.parameters(), lr=args.learning_rate, momentum=0.9, weight_decay=5e-4)
+    scheduler = MultiStepLR(optimizer, milestones=args.scheduler_steps, gamma=0.1)
 
     if verbose:
         header = "| {:{align}{widthL}} | {:{align}{widthA}} | {:{align}{widthA}} | {:{align}{widthLL}} | {:{align}{widthA}} | {:{align}{widthM}} | {:{align}{widthM}} | {:{align}{widthM}} | {:{align}{widthM}} |".format(
@@ -124,7 +130,7 @@ for indx, (temperature, optimizer, scheduler) in enumerate(zip(temperatures, opt
         train_loss, correct, total = [], 0, 0
         c_ece, c_mce, c_brier, c_nnl = [], [], [], []
 
-        for c_logits, c_labels in zip(chunks(val_model_logits, batch_size), chunks(val_labels, batch_size)):
+        for c_logits, c_labels in zip(chunks(model_logits, args.batch_size), chunks(model_labels, args.batch_size)):
             # Train
             optimizer.zero_grad()
             new_logits = temperature(c_logits)
@@ -140,7 +146,8 @@ for indx, (temperature, optimizer, scheduler) in enumerate(zip(temperatures, opt
 
             softmax = nn.Softmax(dim=1)
             new_probs_list = softmax(new_logits)
-            ece, mce, brier, nnl = compute_calibration_metrics(new_probs_list, c_labels, apply_softmax=False, bins=15)
+            ece, mce, brier, nnl = compute_calibration_metrics(new_probs_list, c_labels, apply_softmax=False,
+                                                               bins=15)
             c_ece.append(ece)
             c_mce.append(mce)
             c_brier.append(brier.item())
@@ -156,7 +163,8 @@ for indx, (temperature, optimizer, scheduler) in enumerate(zip(temperatures, opt
 
         if verbose:
             line = "| {:{align}{widthL}} | {:{align}{widthA}.6f} | {:{align}{widthA}.4f} | {:{align}{widthLL}.4f} | {:{align}{widthA}.4f} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} |".format(
-                epoch + 1, current_lr, c_train_loss, temperature.temperature.item(), c_accuracy, c_ece, c_mce, c_brier,
+                epoch + 1, current_lr, c_train_loss, temperature.temperature.item(), c_accuracy, c_ece, c_mce,
+                c_brier,
                 c_nnl,
                 align='^', widthL=8, widthA=8, widthM=6, widthLL=10
             )
@@ -164,11 +172,26 @@ for indx, (temperature, optimizer, scheduler) in enumerate(zip(temperatures, opt
 
         scheduler.step()
 
-    print(f"Model {indx + 1} done!")
+    return temperature
+
+
+temperatures_val = []
+print(f"Validation Logits -> Calculating temperature for {len(val_logits_list)} models...")
+for indx, val_model_logits in enumerate(val_logits_list):
+    temperatures_val.append(learn_temperature(val_model_logits, val_labels))
+    print(f"Model {indx} done!")
+print("-- Finished --\n")
+
+temperatures_avg_ensemble = []
+print(f"Validation Logits Ensemble Avg -> Calculating temperature for {len(val_avg_ensemble_logits_list)} models...")
+for indx, val_model_logits in enumerate(val_avg_ensemble_logits_list):
+    temperatures_avg_ensemble.append(learn_temperature(val_model_logits, val_labels))
+    print(f"Ensemble Avg {indx} done!")
+print("-- Finished --\n")
 
 
 # ---- Display Results ----
-def display_results(logits_names, logits_list, labels):
+def display_results(logits_names, logits_list, labels, temperatures, avg=True, get_logits=False):
     softmax = nn.Softmax(dim=1)
     width_methods = max(len("Avg probs ensemble"), max([len(x) for x in logits_names]))
 
@@ -178,11 +201,12 @@ def display_results(logits_names, logits_list, labels):
     print("".join(["_"] * len(header)))
     print(header)
     print("".join(["_"] * len(header)))
-    probs_list = []
+    probs_list, t_logits = [], []
     for indx, logit_name in enumerate(logits_names):
         # Scale with learned temperature parameter the logits
         temperatures[indx].eval()
         logits = temperatures[indx](logits_list[indx])
+        t_logits.append(logits)
         # Compute metrics
         accuracy = compute_accuracy(labels, logits)
         probs = softmax(logits)
@@ -195,16 +219,42 @@ def display_results(logits_names, logits_list, labels):
         print(line)
 
     # ---- Ensemble Strategies: Average ----
-    probs_list = torch.stack(probs_list)
-    probs_avg = probs_list.sum(dim=0) / len(probs_list)
-    probs_avg_accuracy = compute_accuracy(labels, probs_avg)
-    ece, mce, brier, nnl = compute_calibration_metrics(probs_avg, labels, apply_softmax=False, bins=15)
-    line = "| {:{align}{widthL}} | {:{align}{widthA}} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} |".format(
-        "Avg probs ensemble", probs_avg_accuracy, ece, mce, brier, nnl,
-        align='^', widthL=width_methods, widthA=8, widthM=6,
-    )
-    print(line)
+    if avg:
+        probs_list = torch.stack(probs_list)
+        probs_avg = probs_list.sum(dim=0) / len(probs_list)
+        probs_avg_accuracy = compute_accuracy(labels, probs_avg)
+        ece, mce, brier, nnl = compute_calibration_metrics(probs_avg, labels, apply_softmax=False, bins=15)
+        line = "| {:{align}{widthL}} | {:{align}{widthA}} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} |".format(
+            "Avg probs ensemble", probs_avg_accuracy, ece, mce, brier, nnl,
+            align='^', widthL=width_methods, widthA=8, widthM=6,
+        )
+        print(line)
+    if get_logits:
+        return torch.stack(t_logits)
 
 
-display_results(val_logits_names, val_logits_list, val_labels)
-display_results(test_logits_names, test_logits_list, test_labels)
+# --- Avg ensemble
+val_cal_logits = display_results(val_logits_names, val_logits_list, val_labels, temperatures_val, get_logits=True)
+val_cal_logits_ensemble = val_cal_logits.detach().sum(dim=0)
+test_cal_logits = display_results(test_logits_names, test_logits_list, test_labels, temperatures_val, get_logits=True)
+test_cal_logits_ensemble = test_cal_logits.detach().sum(dim=0)
+
+# --- Avg ensemble T
+display_results(
+    val_avg_ensemble_logits_names, val_avg_ensemble_logits_list, val_labels, temperatures_avg_ensemble, avg=False
+)
+display_results(
+    test_avg_ensemble_logits_names, test_avg_ensemble_logits_list, test_labels, temperatures_avg_ensemble, avg=False
+)
+
+# --- Avg ensemble CT
+temperatures_avg_ensemble = []
+print(f"\nValidation Calibrated Logits Ensemble Avg...")
+val_ct_temp = [learn_temperature(val_cal_logits_ensemble, val_labels)]
+
+display_results(
+    ["val_ct_avg_ensemble_logits"], val_cal_logits_ensemble.unsqueeze(0), val_labels, val_ct_temp, avg=False
+)
+display_results(
+    ["test_ct_avg_ensemble_logits"], test_cal_logits_ensemble.unsqueeze(0), test_labels, val_ct_temp, avg=False
+)

@@ -83,6 +83,10 @@ def ensemble_evaluation(logits_directory, prefix, ensemble_strategy=None):
             align='^', widthL=width_methods, widthA=8, widthM=6,
         )
         print(line)
+        torch.save(
+            {"logits": logits_list.sum(dim=0), "labels": labels},
+            os.path.join(logits_directory, f"{prefix}_avg_ensemble_logits.pt")
+        )
 
     if "vote" in ensemble_strategy:
         _, vote_list = torch.max(logits_list.data, dim=2)
