@@ -9,7 +9,7 @@ def get_logits_paths(logits_dir, prefix):
     for subdir, dirs, files in os.walk(logits_dir):
         for file in files:
             file_path = os.path.join(subdir, file)
-            if f"{prefix}_logits" in file_path:
+            if f"{prefix}" in file_path:
                 paths.append(file_path)
 
     if not len(paths):

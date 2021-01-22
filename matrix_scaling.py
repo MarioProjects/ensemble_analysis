@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Usage: python temperature_scaling.py --epochs 250 --scheduler_steps 70 125 180 220 --logits_dir logits_res18_cifar10
+# Usage: python matrix_scaling.py --epochs 250 --scheduler_steps 70 125 180 220 --logits_dir logits_res18_cifar10
 
 import pretty_errors
 
@@ -25,9 +25,9 @@ class SmartFormatter(argparse.HelpFormatter):
         return argparse.HelpFormatter._split_lines(self, text, width)
 
 
-parser = argparse.ArgumentParser(description='Temperature Scaling Analysis', formatter_class=SmartFormatter)
+parser = argparse.ArgumentParser(description='Matrix Scaling Analysis', formatter_class=SmartFormatter)
 
-parser.add_argument('--verbose', action='store_true', help='Display or not temperature learning process')
+parser.add_argument('--verbose', action='store_true', help='Display or not matrix learning process')
 parser.add_argument('--epochs', type=int, default=100, help='Total number epochs for training')
 parser.add_argument('--batch_size', type=int, default=128, help='Batch Size for training')
 parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate')
@@ -36,7 +36,7 @@ parser.add_argument('--scheduler_steps', '--arg', nargs='+', type=int, help='Ste
 args = parser.parse_args()
 
 pretty_errors.mono()
-verbose = args.verbose  # Display or not temperature learning process
+verbose = args.verbose  # Display or not matrix learning process
 
 # ---- Load logits ----
 logits_dir = args.logits_dir
@@ -73,30 +73,22 @@ test_avg_ensemble_logits_list, test_avg_ensemble_labels_list, test_avg_ensemble_
 test_avg_ensemble_labels = test_avg_ensemble_labels_list[0]
 
 
-# ---- TEMPERATURE SCALING ----
-# https://github.com/gpleiss/temperature_scaling/blob/master/temperature_scaling.py
-class TempScaling(nn.Module):
+# ---- matrix SCALING ----
+# https://github.com/gpleiss/matrix_scaling/blob/master/matrix_scaling.py
+class MatrixScaling(nn.Module):
     """
-    A thin decorator, which wraps a model with temperature scaling
+    A thin decorator, which wraps a model with matrix scaling
     model (nn.Module):
         A classification neural network
         NB: Output of the neural network should be the classification logits, NOT the softmax (or log softmax)!
     """
 
-    def __init__(self):
-        super(TempScaling, self).__init__()
-        self.temperature = nn.Parameter(torch.ones(1))
+    def __init__(self, logits_size):
+        super(MatrixScaling, self).__init__()
+        self.matrix = nn.Parameter(torch.ones(logits_size))
 
     def forward(self, model_logits):
-        return self.temperature_scale(model_logits)
-
-    def temperature_scale(self, model_logits):
-        """
-        Perform temperature scaling on logits
-        """
-        # Expand temperature to match the size of logits
-        temperature = self.temperature.unsqueeze(1).expand(model_logits.size(0), model_logits.size(1))
-        return model_logits * temperature
+        return self.matrix * model_logits
 
 
 def chunks(lst, n):
@@ -105,15 +97,15 @@ def chunks(lst, n):
         yield lst[i:i + n]
 
 
-def learn_temperature(model_logits, model_labels):
+def learn_matrix(model_logits, model_labels):
     # Training parameters
     criterion = nn.CrossEntropyLoss().cuda()
     if args.scheduler_steps is None:
         scheduler_steps = np.arange(0, args.epochs, args.epochs // 5)
 
-    # Create 1 temperature parameter per model / val logits
-    temperature = TempScaling()
-    optimizer = SGD(temperature.parameters(), lr=args.learning_rate, momentum=0.9, weight_decay=5e-4)
+    # Create 1 matrix parameter per model / val logits
+    matrix = MatrixScaling(model_logits.shape[1])
+    optimizer = SGD(matrix.parameters(), lr=args.learning_rate, momentum=0.9, weight_decay=5e-4)
     scheduler = MultiStepLR(optimizer, milestones=args.scheduler_steps, gamma=0.1)
 
     if verbose:
@@ -128,14 +120,14 @@ def learn_temperature(model_logits, model_labels):
 
     for epoch in range(args.epochs):
 
-        temperature.train()
+        matrix.train()
         train_loss, correct, total = [], 0, 0
         c_ece, c_mce, c_brier, c_nnl = [], [], [], []
 
         for c_logits, c_labels in zip(chunks(model_logits, args.batch_size), chunks(model_labels, args.batch_size)):
             # Train
             optimizer.zero_grad()
-            new_logits = temperature(c_logits)
+            new_logits = matrix(c_logits)
             loss = criterion(new_logits, c_labels)
             loss.backward()
             optimizer.step()
@@ -164,7 +156,7 @@ def learn_temperature(model_logits, model_labels):
 
         if verbose:
             line = "| {:{align}{widthL}} | {:{align}{widthA}.6f} | {:{align}{widthA}.4f} | {:{align}{widthLL}.4f} | {:{align}{widthA}.4f} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} | {:{align}{widthM}.4f} |".format(
-                epoch + 1, current_lr, c_train_loss, temperature.temperature.item(), c_accuracy, c_ece, c_mce,
+                epoch + 1, current_lr, c_train_loss, matrix.matrix.item(), c_accuracy, c_ece, c_mce,
                 c_brier,
                 c_nnl,
                 align='^', widthL=8, widthA=8, widthM=6, widthLL=10
@@ -173,26 +165,26 @@ def learn_temperature(model_logits, model_labels):
 
         scheduler.step()
 
-    return temperature
+    return matrix
 
 
-temperatures_val = []
-print(f"Validation Logits -> Calculating temperature for {len(val_logits_list)} models...")
+matrices_val = []
+print(f"Validation Logits -> Calculating matrix for {len(val_logits_list)} models...")
 for indx, val_model_logits in enumerate(val_logits_list):
-    temperatures_val.append(learn_temperature(val_model_logits, val_labels))
+    matrices_val.append(learn_matrix(val_model_logits, val_labels))
     print(f"Model {indx} done!")
 print("-- Finished --\n")
 
-temperatures_avg_ensemble = []
-print(f"Validation Logits Ensemble Avg -> Calculating temperature for {len(val_avg_ensemble_logits_list)} models...")
+matrices_avg_ensemble = []
+print(f"Validation Logits Ensemble Avg -> Calculating matrix for {len(val_avg_ensemble_logits_list)} models...")
 for indx, val_model_logits in enumerate(val_avg_ensemble_logits_list):
-    temperatures_avg_ensemble.append(learn_temperature(val_model_logits, val_labels))
+    matrices_avg_ensemble.append(learn_matrix(val_model_logits, val_labels))
     print(f"Ensemble Avg {indx} done!")
 print("-- Finished --\n")
 
 
 # ---- Display Results ----
-def display_results(logits_names, logits_list, labels, temperatures, avg=True, get_logits=False):
+def display_results(logits_names, logits_list, labels, matrices, avg=True, get_logits=False):
     softmax = nn.Softmax(dim=1)
     width_methods = max(len("Avg probs ensemble"), max([len(x) for x in logits_names]))
 
@@ -204,9 +196,9 @@ def display_results(logits_names, logits_list, labels, temperatures, avg=True, g
     print("".join(["_"] * len(header)))
     probs_list, t_logits = [], []
     for indx, logit_name in enumerate(logits_names):
-        # Scale with learned temperature parameter the logits
-        temperatures[indx].eval()
-        logits = temperatures[indx](logits_list[indx])
+        # Scale with learned matrix parameter the logits
+        matrices[indx].eval()
+        logits = matrices[indx](logits_list[indx])
         t_logits.append(logits)
         # Compute metrics
         accuracy = compute_accuracy(labels, logits)
@@ -235,24 +227,24 @@ def display_results(logits_names, logits_list, labels, temperatures, avg=True, g
 
 
 # --- Avg ensemble
-val_cal_logits = display_results(val_logits_names, val_logits_list, val_labels, temperatures_val, get_logits=True)
+val_cal_logits = display_results(val_logits_names, val_logits_list, val_labels, matrices_val, get_logits=True)
 val_cal_logits_ensemble = val_cal_logits.detach().sum(dim=0)
-test_cal_logits = display_results(test_logits_names, test_logits_list, test_labels, temperatures_val, get_logits=True)
+test_cal_logits = display_results(test_logits_names, test_logits_list, test_labels, matrices_val, get_logits=True)
 test_cal_logits_ensemble = test_cal_logits.detach().sum(dim=0)
 
 # --- Avg ensemble T
 print("\n\n--- Avg ensemble T ---")
 display_results(
-    val_avg_ensemble_logits_names, val_avg_ensemble_logits_list, val_labels, temperatures_avg_ensemble, avg=False
+    val_avg_ensemble_logits_names, val_avg_ensemble_logits_list, val_labels, matrices_avg_ensemble, avg=False
 )
 display_results(
-    test_avg_ensemble_logits_names, test_avg_ensemble_logits_list, test_labels, temperatures_avg_ensemble, avg=False
+    test_avg_ensemble_logits_names, test_avg_ensemble_logits_list, test_labels, matrices_avg_ensemble, avg=False
 )
 
 # --- Avg ensemble CT
 print("\n\n--- Avg ensemble CT ---")
-temperatures_avg_ensemble = []
-val_ct_temp = [learn_temperature(val_cal_logits_ensemble, val_labels)]
+matrices_avg_ensemble = []
+val_ct_temp = [learn_matrix(val_cal_logits_ensemble, val_labels)]
 
 display_results(
     ["val_ct_avg_ensemble_logits"], val_cal_logits_ensemble.unsqueeze(0), val_labels, val_ct_temp, avg=False

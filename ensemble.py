@@ -29,7 +29,7 @@ pretty_errors.mono()
 logits_dir = args.logits_dir
 
 
-def ensemble_evaluation(logits_directory, prefix, ensemble_strategy=None):
+def ensemble_evaluation(logits_directory, prefix, ensemble_strategy=None, ensemble_name=""):
     # Check ensemble strategies are fine
     available_strategies = ["avg", "vote"]
     if ensemble_strategy is None or len(ensemble_strategy) == 0:
@@ -85,7 +85,7 @@ def ensemble_evaluation(logits_directory, prefix, ensemble_strategy=None):
         print(line)
         torch.save(
             {"logits": logits_list.sum(dim=0), "labels": labels},
-            os.path.join(logits_directory, f"{prefix}_avg_ensemble_logits.pt")
+            os.path.join(logits_directory, f"{ensemble_name}_avg_ensemble_logits.pt")
         )
 
     if "vote" in ensemble_strategy:
@@ -104,7 +104,7 @@ def ensemble_evaluation(logits_directory, prefix, ensemble_strategy=None):
 
 
 print("\n---- Validation evaluation ----\n")
-ensemble_evaluation(logits_dir, prefix="val", ensemble_strategy=["avg"])
+ensemble_evaluation(logits_dir, prefix="val_logits", ensemble_strategy=["avg"], ensemble_name="val")
 
 print("\n---- Test evaluation ----\n")
-ensemble_evaluation(logits_dir, prefix="test", ensemble_strategy=["avg"])
+ensemble_evaluation(logits_dir, prefix="test_logits", ensemble_strategy=["avg"], ensemble_name="test")
